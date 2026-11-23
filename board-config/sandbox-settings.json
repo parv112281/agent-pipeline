@@ -1,0 +1,62 @@
+{
+  "sandbox": {
+    "enabled": true,
+    "failIfUnavailable": true,
+    "allowUnsandboxedCommands": false,
+    "autoAllowBashIfSandboxed": true,
+    "filesystem": {
+      "allowWrite": [
+        "~/.m2",
+        "~/.gradle",
+        "~/.npm",
+        "~/.cache",
+        "~/.local/share/mise",
+        "~/.local/state/mise"
+      ],
+      "denyRead": [
+        "~/.ssh",
+        "~/.gnupg",
+        "~/.aws",
+        "~/.netrc",
+        "~/.git-credentials",
+        "~/.docker/config.json",
+        "~/.config/gh",
+        "~/.claude/.credentials.json",
+        "~/agent-pipeline/board/.env",
+        "~/agent-pipeline/state"
+      ]
+    },
+    "network": {
+      "allowedDomains": [
+        "registry.npmjs.org",
+        "registry.yarnpkg.com",
+        "pypi.org",
+        "files.pythonhosted.org",
+        "repo.maven.apache.org",
+        "repo1.maven.org",
+        "plugins.gradle.org",
+        "plugins-artifacts.gradle.org",
+        "services.gradle.org",
+        "downloads.gradle.org",
+        "github.com",
+        "api.github.com",
+        "codeload.github.com",
+        "*.githubusercontent.com",
+        "mise.jdx.dev",
+        "mise-versions.jdx.dev",
+        "mise-java.jdx.dev",
+        "tuf-repo-cdn.sigstore.dev",
+        "nodejs.org",
+        "download.java.net",
+        "api.adoptium.net",
+        "cdn.azul.com",
+        "get.helm.sh"
+      ]
+    }
+  },
+  "env": {
+    "MISE_YES": "1",
+    "MISE_TRUSTED_CONFIG_PATHS": "__HOME__/agent-pipeline/worktrees",
+    "CHROME_BIN": "/usr/bin/google-chrome"
+  }
+}

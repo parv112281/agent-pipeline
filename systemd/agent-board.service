@@ -1,0 +1,14 @@
+[Unit]
+Description=Agent pipeline: task board (web UI and API on 127.0.0.1:3738)
+
+[Service]
+WorkingDirectory=%h/agent-pipeline/board
+# Settings (token, BOARD_SEED=0, api mode) come from .env, which next reads itself.
+ExecStart=%h/repos/personal/agent-pipeline/systemd/pipeline-node node_modules/next/dist/bin/next start -H 127.0.0.1 -p 3738
+Environment=PATH=%h/bin:%h/.local/bin:%h/anaconda3/bin:/usr/local/bin:/usr/bin:/bin
+UnsetEnvironment=ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

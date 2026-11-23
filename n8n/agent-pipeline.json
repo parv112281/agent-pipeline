@@ -1,0 +1,305 @@
+[
+  {
+    "updatedAt": "2026-10-07T14:30:22.000Z",
+    "createdAt": "2026-10-07T14:30:05.763Z",
+    "id": "AgentPipelineWf01",
+    "name": "Agent pipeline",
+    "description": null,
+    "active": true,
+    "isArchived": false,
+    "nodes": [
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "minutes",
+                "minutesInterval": 2
+              }
+            ]
+          }
+        },
+        "name": "Every 2 minutes",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          0,
+          0
+        ],
+        "id": "every-2-minutes"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "http://172.17.0.1:8798/call/run_named",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({ command: 'pipeline', args: ['tick'] }) }}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "timeout": 150000
+          }
+        },
+        "name": "Pipeline tick",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          224,
+          0
+        ],
+        "id": "pipeline-tick",
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "<HOST_TOOLS_CREDENTIAL_ID>",
+            "name": "Host tools"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "// Turn the tick result into one item per notification.\n// Anything unexpected (host-tools down, non-zero exit, timeout, output that is not the agreed JSON)\n// gives no items: nothing is sent, nothing is acknowledged, and the next tick starts fresh.\nconst r = $input.first()?.json ?? {};\nif (r.exit_code !== 0 || r.timed_out || typeof r.output !== 'string') return [];\nlet parsed;\ntry {\n  parsed = JSON.parse(r.output);\n} catch (e) {\n  return [];\n}\nconst list = Array.isArray(parsed?.notifications) ? parsed.notifications : [];\nreturn list\n  .filter(n => n && typeof n.id === 'string' && n.id && typeof n.text === 'string' && n.text.trim())\n  .slice(0, 5)\n  .map(n => ({ json: { id: n.id, text: n.text } }));"
+        },
+        "name": "Parse notifications",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          448,
+          0
+        ],
+        "id": "parse-notifications"
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "name": "Loop Over Notifications",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          672,
+          0
+        ],
+        "id": "loop-over-notifications"
+      },
+      {
+        "parameters": {
+          "operation": "send",
+          "phoneNumberId": "<WHATSAPP_PHONE_NUMBER_ID>",
+          "recipientPhoneNumber": "<PARV_WHATSAPP_NUMBER>",
+          "textBody": "={{ $json.text.slice(0, 4000) }}",
+          "additionalFields": {}
+        },
+        "name": "Send WhatsApp",
+        "type": "n8n-nodes-base.whatsApp",
+        "typeVersion": 1.1,
+        "position": [
+          896,
+          16
+        ],
+        "id": "send-whatsapp",
+        "onError": "continueErrorOutput",
+        "credentials": {
+          "whatsAppApi": {
+            "id": "<WHATSAPP_CREDENTIAL_ID>",
+            "name": "WhatsApp account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "b2f0c1de-0001-4000-8000-000000000001",
+                "leftValue": "={{ $json.messages?.[0]?.id ?? '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "name": "Accepted by WhatsApp?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1120,
+          0
+        ],
+        "id": "accepted-by-whatsapp"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "http://172.17.0.1:8798/call/run_named",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({ command: 'pipeline', args: ['ack', $('Loop Over Notifications').item.json.id] }) }}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "name": "Acknowledge",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1344,
+          -16
+        ],
+        "id": "acknowledge",
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "<HOST_TOOLS_CREDENTIAL_ID>",
+            "name": "Host tools"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Every 2 minutes": {
+        "main": [
+          [
+            {
+              "node": "Pipeline tick",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Pipeline tick": {
+        "main": [
+          [
+            {
+              "node": "Parse notifications",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse notifications": {
+        "main": [
+          [
+            {
+              "node": "Loop Over Notifications",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Loop Over Notifications": {
+        "main": [
+          [],
+          [
+            {
+              "node": "Send WhatsApp",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send WhatsApp": {
+        "main": [
+          [
+            {
+              "node": "Accepted by WhatsApp?",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Loop Over Notifications",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Accepted by WhatsApp?": {
+        "main": [
+          [
+            {
+              "node": "Acknowledge",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Loop Over Notifications",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Acknowledge": {
+        "main": [
+          [
+            {
+              "node": "Loop Over Notifications",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1"
+    },
+    "staticData": {
+      "node:Every 2 minutes": {
+        "recurrenceRules": [
+          null
+        ],
+        "recurrenceRuleSignatures": [
+          null
+        ]
+      }
+    },
+    "meta": null,
+    "nodeGroups": [],
+    "pinData": {},
+    "versionId": "53b4824e-1011-45eb-92ed-6ab4f9e5bd71",
+    "activeVersionId": "53b4824e-1011-45eb-92ed-6ab4f9e5bd71",
+    "versionCounter": 1,
+    "triggerCount": 1,
+    "sourceWorkflowId": null,
+    "tags": [],
+    "versionMetadata": {
+      "name": null,
+      "description": null
+    }
+  }
+]

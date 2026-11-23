@@ -1,0 +1,24 @@
+[Unit]
+Description=Agent pipeline: merge watcher (moves a task to Done when its PR is merged)
+Wants=agent-board.service
+After=agent-board.service graphical-session.target
+
+[Service]
+WorkingDirectory=%h/agent-pipeline/board
+ExecStartPre=%h/repos/personal/agent-pipeline/systemd/pipeline-node --env-file=.env agent/prestart.mjs
+ExecStart=%h/repos/personal/agent-pipeline/systemd/pipeline-node --env-file=.env agent/merge-watcher.mjs
+Environment=PATH=%h/bin:%h/.local/bin:%h/anaconda3/bin:/usr/local/bin:/usr/bin:/bin
+UnsetEnvironment=ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN
+# git over https has no credential helper on this machine. Give these services
+# the gh one (what "gh auth setup-git" would write) without touching ~/.gitconfig.
+Environment=GIT_TERMINAL_PROMPT=0
+Environment=GIT_CONFIG_COUNT=2
+Environment=GIT_CONFIG_KEY_0=credential.https://github.com.helper
+Environment=GIT_CONFIG_VALUE_0=
+Environment=GIT_CONFIG_KEY_1=credential.https://github.com.helper
+Environment="GIT_CONFIG_VALUE_1=!%h/bin/gh auth git-credential"
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target
