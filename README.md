@@ -1,10 +1,10 @@
 # Agent pipeline
 
-Takes personal projects from idea to merged code with AI agents doing the work and Parv reviewing pull
+Takes personal projects from idea to merged code with AI agents doing the work and user reviewing pull
 requests. `SPEC.md` says what the pipeline does. This repository holds the engine: a Python command-line
 program (`~/bin/pipeline`) that drives the task board and GitHub. Where the specification says "n8n does X",
 the engine does X; n8n only runs `pipeline tick` every 2 minutes, sends the notifications it returns over
-WhatsApp, and passes Parv's commands on.
+WhatsApp, and passes user's commands on.
 
 The task board, with its dispatcher and merge watcher, is
 [agent-task-board](https://github.com/davidcjw/agent-task-board) by David Chong (MIT), run with a few local
@@ -59,7 +59,7 @@ Checkouts live under `~/agent-pipeline/repos/<name>`. The board token is read fr
   (board HTTP API, `gh` and `git`, state files). Tests replace the first two with fakes.
 - `pipeline/cli.py`: the command line. `~/bin/pipeline` starts it.
 - `n8n/`: exports of the two n8n workflows. Values in angle brackets (`<WHATSAPP_CREDENTIAL_ID>`,
-  `<PARV_WHATSAPP_NUMBER>` and so on) are placeholders: after importing, pick your own credentials on each
+  `<USER_WHATSAPP_NUMBER>` and so on) are placeholders: after importing, pick your own credentials on each
   node and fill in the phone numbers.
 
 Standard library only, Python 3.12. `gh` is called as `~/bin/gh` and git as `/usr/bin/git` (`PIPELINE_GH`,
@@ -68,8 +68,8 @@ Standard library only, Python 3.12. `gh` is called as `~/bin/gh` and git as `/us
 ## Tests
 
 ```
-cd ~/repos/personal/agent-pipeline
-/home/parv/anaconda3/bin/python3 -m pytest tests -q
+cd ~/path/agent-pipeline
+python3 -m pytest tests -q
 ```
 
 The tests use a fake board, a fake GitHub and a temporary state directory. They do not need the board
