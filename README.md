@@ -6,6 +6,11 @@ program (`~/bin/pipeline`) that drives the task board and GitHub. Where the spec
 the engine does X; n8n only runs `pipeline tick` every 2 minutes, sends the notifications it returns over
 WhatsApp, and passes Parv's commands on.
 
+The task board, with its dispatcher and merge watcher, is
+[agent-task-board](https://github.com/davidcjw/agent-task-board) by David Chong (MIT), run with a few local
+changes. It is not included here; `board-config/` holds the routes and sandbox settings this pipeline
+installs into it.
+
 ## Commands
 
 | Command | Does |
